@@ -27,6 +27,8 @@ from datetime import date, datetime
 from math import pi
 from numbers import Number
 from urllib.parse import quote_plus
+from pathlib import Path
+from importlib import resources
 
 from pygal import __version__
 from pygal._compat import to_str, u
@@ -103,19 +105,25 @@ class Svg(object):
             if css.startswith('inline:'):
                 css_text = css[len('inline:'):]
             elif css.startswith('file://'):
-                css = css[len('file://'):]
+                css_path = Path(css[len('file://'):])
 
-                if not os.path.exists(css):
-                    css = os.path.join(os.path.dirname(__file__), 'css', css)
+                if css_path.exists():
+                    css_template = css_path.read_text(encoding='utf-8')
+                else:
+                    try:
+                        root = resources.files(__package__)
+                        css_template = root.joinpath('css').joinpath(css_path).read_text()
+                    except (ValueError, AttributeError):
+                        from . import css
+                        css_template = resources.read_text(css, css_path)
 
-                with io.open(css, encoding='utf-8') as f:
-                    css_text = template(
-                        f.read(),
-                        style=self.graph.style,
-                        colors=colors,
-                        strokes=strokes,
-                        id=self.id
-                    )
+                css_text = template(
+                    css_template,
+                    style=self.graph.style,
+                    colors=colors,
+                    strokes=strokes,
+                    id=self.id
+                )
 
             if css_text is not None:
                 if not self.graph.pretty_print:
