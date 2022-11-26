@@ -112,7 +112,10 @@ class Svg(object):
                 else:
                     try:
                         root = resources.files(__package__)
-                        css_template = root.joinpath('css').joinpath(css_path).read_text()
+                        # Need to make 'css_path' a string for Nuitka...
+                        # Nuitka is also the reason we have to use `joinpath`
+                        # instead of just '/'
+                        css_template = root.joinpath('css').joinpath(str(css_path)).read_text()
                     except (ValueError, AttributeError):
                         from . import css
                         css_template = resources.read_text(css, css_path)
